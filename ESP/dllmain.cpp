@@ -1,6 +1,6 @@
 ﻿#include <Windows.h>
 #include <d3d9.h>
-#include <MinHook.h>
+#include "MinHook.h"
 #include <d3dx9core.h>
 #include "vec3.h"
 #include "CustomDirectX9Device.h"
@@ -9,7 +9,6 @@
 typedef LRESULT(CALLBACK* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
 
 DWORD o_end_scene;
-
 long __stdcall hkEndScene(CustomDirectX9Device* pDevice)
 {
     for (byte i = 1; i < 32; i++)
@@ -18,12 +17,34 @@ long __stdcall hkEndScene(CustomDirectX9Device* pDevice)
         {
             CBaseEntity* entity = *(CBaseEntity**)(0x1BFBBF8 + i * 0x8c);
 
-            auto screen = pDevice->WorldToScreen(entity->vec_Origin);
+            if (!entity)
+                continue;
+
+            auto up = pDevice->WorldToScreen(entity->vec_Origin);
             
-            if (screen.z > 0 and entity->m_iHealth > 0)
+            if (up.z > 0 and entity->m_iHealth > 0 and entity->m_iHealth < 500)
             {
-                auto sreen_size = pDevice->GetWindowSize();
-                pDevice->DrawLine(ImVec3(sreen_size.x / 2, sreen_size.y, 0), screen, 2, D3DCOLOR_ARGB(255, 255, 0, 0));
+                auto bottom = pDevice->WorldToScreen(entity->vec_Origin + ImVec3(0, 0, 70));
+                int height = abs((int)(up.y - bottom.y));
+
+                ImVec2 x1 = bottom; x1.x -= height / 4.f;
+                ImVec2 x2 = bottom; x2.x += height / 4.f;
+
+                ImVec2 x3 = x1;
+                ImVec2 x4 = x2;
+
+                auto health_bar_start = x4;
+
+                x3.y = up.y;
+                x4.y = up.y;
+                pDevice->DrawLine(x1, x2, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
+                pDevice->DrawLine(x3, x4, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
+                pDevice->DrawLine(x3, x1, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
+                pDevice->DrawLine(x2, x4, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
+
+                pDevice->DrawLine(x2 + ImVec2(5, 0), x4 + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 0, 0));
+
+                pDevice->DrawLine(x4 + ImVec2(5, -(height * (entity->m_iHealth / (float)*(int*)(0x2AB5EF64)))), x4 + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 255, 0));
             }
         }
         __except (EXCEPTION_EXECUTE_HANDLER)

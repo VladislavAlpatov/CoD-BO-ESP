@@ -8,7 +8,15 @@
 
 typedef LRESULT(CALLBACK* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
 
-DWORD o_end_scene;
+LPVOID o_end_scene;
+LPVOID o_on_kill;
+int __cdecl hOnKill(int a1, int a2)
+{
+    PlaySound("killsound.wav", NULL, SND_ASYNC);
+    typedef int(__cdecl* OnKillT)(int,int);
+    return reinterpret_cast<OnKillT>(o_on_kill)(a1, a2);
+
+}
 long __stdcall hkEndScene(CustomDirectX9Device* pDevice)
 {
     for (byte i = 1; i < 32; i++)
@@ -32,8 +40,6 @@ long __stdcall hkEndScene(CustomDirectX9Device* pDevice)
 
                 ImVec2 x3 = x1;
                 ImVec2 x4 = x2;
-
-                auto health_bar_start = x4;
 
                 x3.y = up.y;
                 x4.y = up.y;
@@ -62,16 +68,18 @@ DWORD WINAPI EntryPoint(HMODULE hModule)
 {
     MH_Initialize();
     DWORD end_scene_addr = (DWORD)(GetModuleHandle("d3d9.dll")) + 0x63130;
+    DWORD on_kill_addr   = (DWORD)(GetModuleHandle(NULL)) + 0xc55d0;
 
-    MH_CreateHook((LPVOID)end_scene_addr, &hkEndScene, reinterpret_cast<LPVOID*>(&o_end_scene));
-    MH_EnableHook((LPVOID)end_scene_addr);
+    MH_CreateHook((LPVOID)end_scene_addr, &hkEndScene, &o_end_scene);
+    MH_CreateHook((LPVOID)on_kill_addr, &hOnKill, &o_on_kill);
+    MH_EnableHook(MH_ALL_HOOKS);
     while (!GetAsyncKeyState(VK_END))
     {
         Sleep(100);
     }
-    MH_DisableHook((LPVOID)end_scene_addr);
+    MH_DisableHook(MH_ALL_HOOKS);
     Sleep(100);
-    MH_RemoveHook((LPVOID)end_scene_addr);
+    MH_RemoveHook(MH_ALL_HOOKS);
     
     FreeLibraryAndExitThread(hModule, 0);
 }

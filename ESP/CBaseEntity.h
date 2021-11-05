@@ -7,5 +7,5 @@ public:
 	ImVec3 vec_Origin; //0x011C
 	char pad_0128[92]; //0x0128
 	int m_iHealth; //0x0184
-	char pad_0188[1728]; //0x0188
+	int m_iMaxHealth;
 }; //Size: 0x0848

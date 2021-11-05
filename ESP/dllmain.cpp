@@ -22,7 +22,7 @@ long __stdcall hkEndScene(CustomDirectX9Device* pDevice)
 
             auto up = pDevice->WorldToScreen(entity->vec_Origin);
             
-            if (up.z > 0 and entity->m_iHealth > 0 and entity->m_iHealth < 500)
+            if (up.z > 0 and entity->m_iHealth > 0)
             {
                 auto bottom = pDevice->WorldToScreen(entity->vec_Origin + ImVec3(0, 0, 70));
                 int height = abs((int)(up.y - bottom.y));
@@ -44,7 +44,7 @@ long __stdcall hkEndScene(CustomDirectX9Device* pDevice)
 
                 pDevice->DrawLine(x2 + ImVec2(5, 0), x4 + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 0, 0));
 
-                pDevice->DrawLine(x4 + ImVec2(5, -(height * (entity->m_iHealth / (float)*(int*)(0x2AB5EF64)))), x4 + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 255, 0));
+                pDevice->DrawLine(x4 + ImVec2(5, -(height * ((float)entity->m_iHealth / (float)entity->m_iMaxHealth))), x4 + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 255, 0));
             }
         }
         __except (EXCEPTION_EXECUTE_HANDLER)

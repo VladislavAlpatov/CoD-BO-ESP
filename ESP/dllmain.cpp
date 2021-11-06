@@ -6,13 +6,13 @@
 #include "CustomDirectX9Device.h"
 #include "CBaseEntity.h"
 
-typedef LRESULT(CALLBACK* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
-
 LPVOID o_end_scene;
 LPVOID o_on_kill;
+
 int __cdecl hOnKill(int a1, int a2)
 {
     PlaySound("killsound.wav", NULL, SND_ASYNC);
+
     typedef int(__cdecl* OnKillT)(int,int);
     return reinterpret_cast<OnKillT>(o_on_kill)(a1, a2);
 
@@ -23,34 +23,39 @@ long __stdcall hkEndScene(CustomDirectX9Device* pDevice)
     {
         __try
         {
-            CBaseEntity* entity = *(CBaseEntity**)(0x1BFBBF8 + i * 0x8c);
+            CBaseEntity* entity = *reinterpret_cast<CBaseEntity**>(0x1BFBBF8 + i * 0x8c);
 
             if (!entity)
                 continue;
 
-            auto up = pDevice->WorldToScreen(entity->vec_Origin);
+            auto top = pDevice->WorldToScreen(entity->vec_Origin);
             
-            if (up.z > 0 and entity->m_iHealth > 0)
+            if (top.z > 0 and entity->m_iHealth > 0)
             {
                 auto bottom = pDevice->WorldToScreen(entity->vec_Origin + ImVec3(0, 0, 70));
-                int height = abs((int)(up.y - bottom.y));
 
-                ImVec2 x1 = bottom; x1.x -= height / 4.f;
-                ImVec2 x2 = bottom; x2.x += height / 4.f;
+                int height = abs(static_cast<int>(top.y - bottom.y));
 
-                ImVec2 x3 = x1;
-                ImVec2 x4 = x2;
+                ImVec2 bottom_left_corner  = bottom;
+                ImVec2 bottom_right_corner = bottom;
 
-                x3.y = up.y;
-                x4.y = up.y;
-                pDevice->DrawLine(x1, x2, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
-                pDevice->DrawLine(x3, x4, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
-                pDevice->DrawLine(x3, x1, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
-                pDevice->DrawLine(x2, x4, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
+                bottom_left_corner.x  -= height / 4.f;
+                bottom_right_corner.x += height / 4.f;
 
-                pDevice->DrawLine(x2 + ImVec2(5, 0), x4 + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 0, 0));
+                ImVec2 top_left_coner  = bottom_left_corner;
+                ImVec2 top_right_coner = bottom_right_corner;
 
-                pDevice->DrawLine(x4 + ImVec2(5, -(height * ((float)entity->m_iHealth / (float)entity->m_iMaxHealth))), x4 + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 255, 0));
+                top_left_coner.y  = top.y;
+                top_right_coner.y = top.y;
+
+                pDevice->DrawLine(bottom_left_corner,  bottom_right_corner, 2, D3DCOLOR_ARGB(255, 255, 255, 255));
+                pDevice->DrawLine(top_left_coner,      top_right_coner,     2, D3DCOLOR_ARGB(255, 255, 255, 255));
+                pDevice->DrawLine(top_left_coner,      bottom_left_corner,  2, D3DCOLOR_ARGB(255, 255, 255, 255));
+                pDevice->DrawLine(bottom_right_corner, top_right_coner,     2, D3DCOLOR_ARGB(255, 255, 255, 255));
+
+                pDevice->DrawLine(top_left_coner + ImVec2(5, 0), top_right_coner + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 0, 0));
+
+                pDevice->DrawLine(top_right_coner + ImVec2(5, -(height * entity->GetHealthPercent())), top_right_coner + ImVec2(5, 0), 5, entity->GetColorBasedOnHealth());
             }
         }
         __except (EXCEPTION_EXECUTE_HANDLER)
@@ -68,15 +73,17 @@ DWORD WINAPI EntryPoint(HMODULE hModule)
 {
     MH_Initialize();
     DWORD end_scene_addr = (DWORD)(GetModuleHandle("d3d9.dll")) + 0x63130;
-    DWORD on_kill_addr   = (DWORD)(GetModuleHandle(NULL)) + 0xc55d0;
+    DWORD on_kill_addr   = (DWORD)(GetModuleHandle(NULL))       + 0xc55d0;
 
     MH_CreateHook((LPVOID)end_scene_addr, &hkEndScene, &o_end_scene);
-    MH_CreateHook((LPVOID)on_kill_addr, &hOnKill, &o_on_kill);
+    MH_CreateHook((LPVOID)on_kill_addr,   &hOnKill,    &o_on_kill);
     MH_EnableHook(MH_ALL_HOOKS);
+
     while (!GetAsyncKeyState(VK_END))
     {
         Sleep(100);
     }
+
     MH_DisableHook(MH_ALL_HOOKS);
     Sleep(100);
     MH_RemoveHook(MH_ALL_HOOKS);

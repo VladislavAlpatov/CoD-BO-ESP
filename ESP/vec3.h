@@ -12,7 +12,8 @@ public:
     }
     ImVec2()
     {
-
+        this->x = 0.f;
+        this->y = 0.f;
     }
     ImVec2 operator+(const ImVec2& v) const
     {
@@ -34,6 +35,12 @@ public:
     {
 
     };
+    ImVec3(ImVec2& vec2)
+    {
+        this->x = vec2.x;
+        this->y = vec2.y;
+
+    }
     bool operator==(const ImVec3& src) const
     {
         return (src.x == x) && (src.y == y) && (src.z == z);
@@ -51,6 +58,13 @@ public:
     ImVec3& operator-=(const ImVec3& v)
     {
         x -= v.x; y -= v.y; z -= v.z;
+        return *this;
+    }
+    ImVec3& operator+=(const ImVec2& v)
+    {
+        this->x += v.x; 
+        this->y += v.y;
+
         return *this;
     }
     ImVec3& operator*=(float fl)

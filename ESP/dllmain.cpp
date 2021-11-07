@@ -53,7 +53,7 @@ long __stdcall hkEndScene(CustomDirectX9Device* pDevice)
                 pDevice->DrawLine(top_left_coner,      bottom_left_corner,  2, D3DCOLOR_ARGB(255, 255, 255, 255));
                 pDevice->DrawLine(bottom_right_corner, top_right_coner,     2, D3DCOLOR_ARGB(255, 255, 255, 255));
 
-                pDevice->DrawLine(top_left_coner + ImVec2(5, 0), top_right_coner + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 0, 0));
+                pDevice->DrawLine(bottom_right_corner + ImVec2(5, 0), top_right_coner + ImVec2(5, 0), 5, D3DCOLOR_ARGB(255, 0, 0, 0));
 
                 pDevice->DrawLine(top_right_coner + ImVec2(5, -(height * entity->GetHealthPercent())), top_right_coner + ImVec2(5, 0), 5, entity->GetColorBasedOnHealth());
             }

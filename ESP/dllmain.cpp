@@ -8,6 +8,8 @@
 
 LPVOID o_end_scene;
 LPVOID o_on_kill;
+LPVOID  oUpdateViewAngles;
+
 LPVOID oPresent;
 CustomDirectX9Device* g_pDevice = nullptr;
 
@@ -19,7 +21,13 @@ int __cdecl hOnKill(int a1, int a2)
     return reinterpret_cast<OnKillT>(o_on_kill)(a1, a2);
 
 }
+int __cdecl UpdateViewAngles(int a1)
+{
+    *(float*)(a1 + 0x180) = 0.f;
+    typedef int(__cdecl* tUpdateViewAngles)(int);
 
+    return reinterpret_cast<tUpdateViewAngles>(oUpdateViewAngles)(a1);
+}
 int __fastcall PresentMain(void* pThis,void* edx, const struct tagRECT* a2, const struct tagRECT* a3, HWND a4, const struct _RGNDATA* a5, unsigned int a6)
 {
     if (not g_pDevice)
@@ -90,10 +98,11 @@ DWORD WINAPI EntryPoint(HMODULE hModule)
     DWORD end_scene_addr = (DWORD)(GetModuleHandle("d3d9.dll")) + 0x68510;
     DWORD PresentAddr = (DWORD)(GetModuleHandle("d3d9.dll")) + 0x4f353;
     DWORD on_kill_addr   = (DWORD)(GetModuleHandle(NULL))       + 0xc55d0;
-
+    DWORD x = (DWORD)(GetModuleHandle(NULL)) + 0x1bb770;
     MH_CreateHook((LPVOID)end_scene_addr, &hkEndScene, &o_end_scene);
     MH_CreateHook((LPVOID)PresentAddr,    &PresentMain, &oPresent);
     MH_CreateHook((LPVOID)on_kill_addr,   &hOnKill,    &o_on_kill);
+    MH_CreateHook((LPVOID)x, &UpdateViewAngles, &oUpdateViewAngles);
     MH_EnableHook(MH_ALL_HOOKS);
 
     while (!GetAsyncKeyState(VK_END))
